@@ -25,7 +25,7 @@ variable "desired_count" {
 variable "container_image" {
   type        = string
   description = "Container image to use for n8n"
-  default     = "n8nio/n8n:1.4.0"
+  default     = "n8nio/n8n:latest"
 }
 
 variable "fargate_type" {
@@ -41,7 +41,7 @@ variable "ssl_policy" {
 }
 
 variable "tags" {
-  type        = map(string)
+  type = map(string)
   description = "Tags to apply to all resources"
-  default = null
+  default     = null
 }
