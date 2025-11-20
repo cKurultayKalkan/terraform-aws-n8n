@@ -45,3 +45,54 @@ variable "tags" {
   description = "Tags to apply to all resources"
   default     = null
 }
+
+variable "project_name" {
+  type        = string
+  description = "Project name"
+  default     = "n8n"
+}
+
+variable "aws_profile" {
+  type        = string
+  description = "AWS Profile name to use (Optional)"
+  default     = null
+}
+
+variable "aws_access_key" {
+  description = "AWS Access Key (Required if not using AWS Profile)"
+  default     = null
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Key (Required if not using AWS Profile)"
+  default     = null
+}
+
+variable "region" {
+  type        = string
+  default     = "us-west-1"
+  description = "AWS Region (e.g., us-west-1)"
+}
+
+variable "domain" {
+  description = "Domain name to use"
+  default     = null
+}
+
+variable "backend_bucket" {
+  type        = string
+  description = "S3 bucket name for Terraform state"
+  default     = null
+}
+
+variable "backend_key" {
+  type        = string
+  description = "Path to the state file in S3 bucket"
+  default     = "n8n/terraform.tfstate"
+}
+
+variable "backend_dynamodb_table" {
+  type        = string
+  description = "DynamoDB table name for Terraform state lock"
+  default     = null
+}

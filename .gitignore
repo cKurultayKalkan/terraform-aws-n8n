@@ -37,3 +37,4 @@ examples/general/.terraform.lock.hcl
 examples/elasticscale
 .gitignore
 .idea
+.terraform.lock.hcl

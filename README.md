@@ -1,3 +1,5 @@
+# Terraform AWS N8n Module
+
 ## Description
 
 This sets up a N8n cluster with two Fargate Spot instances and a ALB. It is backed by an EFS file system to store the state. The total costs are around 3 USD per month (provided your ALB is in the free tier).
@@ -15,21 +17,188 @@ Check out our <a href="https://elasticscale.com" target="_blank" style="color: #
 
 <img src="https://static.elasticscale.io/email/banner.png" alt="ElasticScale banner" width="100%"/>
 
-## Requirements
+## Quick Start
 
-No requirements.
+### Prerequisites
+
+1. AWS CLI configured with appropriate credentials
+2. Terraform installed (>= 1.0)
+3. An AWS account with permissions to create required resources
+
+### Setup Instructions
+
+1. **Clone the repository and prepare configuration:**
+```bash
+# Copy the example configuration file
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit terraform.tfvars with your values
+vim terraform.tfvars
+```
+
+2. **Setup backend infrastructure (S3 & DynamoDB):**
+```bash
+# This script automatically creates S3 bucket and DynamoDB table
+./setup-backend.sh
+```
+
+3. **Initialize Terraform with S3 backend:**
+```bash
+# The init.sh script reads backend configuration from terraform.tfvars
+./init.sh
+```
+
+4. **Review and apply the configuration:**
+```bash
+# Review planned changes
+terraform plan
+
+# Apply the configuration
+terraform apply
+```
+
+## AWS Authentication Options
+
+### Option 1: AWS Profile (Recommended)
+
+Use an existing AWS CLI profile:
+```hcl
+aws_profile = "my-aws-profile"
+```
+
+### Option 2: Access Keys
+
+Provide AWS credentials directly:
+```hcl
+aws_access_key = "AKIAIOSFODNN7EXAMPLE"
+aws_secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+```
+
+## Terraform State Management (S3 & DynamoDB)
+
+This module is configured to use S3 for state storage and DynamoDB for state locking.
+
+### Automatic Backend Setup
+
+The `setup-backend.sh` script automatically creates and configures:
+- S3 bucket with versioning and encryption enabled
+- DynamoDB table for state locking with on-demand billing
+
+Simply run:
+```bash
+./setup-backend.sh
+```
+
+The script will:
+1. Read configuration from `terraform.tfvars`
+2. Create S3 bucket if it doesn't exist
+3. Enable versioning and encryption on the bucket
+4. Create DynamoDB table if it doesn't exist
+5. Configure everything according to your region settings
+
+### Migrating Existing State to S3
+
+If you have an existing local state file:
+```bash
+terraform init -migrate-state \
+  -backend-config="bucket=your-bucket" \
+  -backend-config="key=n8n/terraform.tfstate" \
+  -backend-config="region=us-west-1" \
+  -backend-config="dynamodb_table=your-table" \
+  -backend-config="encrypt=true"
+```
+
+### Required IAM Permissions
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketVersioning"
+      ],
+      "Resource": "arn:aws:s3:::your-terraform-state-bucket"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::your-terraform-state-bucket/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:*:*:table/terraform-state-lock"
+    }
+  ]
+}
+```
+
+## Security Best Practices
+
+1. **S3 Bucket Encryption:** Always enable encryption for your state bucket
+2. **IAM Permissions:** Use least privilege principle
+3. **MFA:** Enable MFA for production environments
+4. **Bucket Policy:** Restrict access to authorized users only
+5. **Backup:** Regularly backup your EFS volume and state files
+
+## Module Configuration
+
+### Required Variables
+
+| Name | Description | Type |
+|------|-------------|------|
+| `project_name` | Project name | `string` |
+| `region` | AWS Region (e.g., us-west-1) | `string` |
+| `certificate_arn` | ACM certificate ARN for SSL | `string` |
+| `domain` | Domain name for N8n | `string` |
+| `backend_bucket` | S3 bucket for Terraform state | `string` |
+| `backend_dynamodb_table` | DynamoDB table for state lock | `string` |
+
+### Optional Variables
+
+| Name | Description | Type | Default |
+|------|-------------|------|---------|
+| `prefix` | Prefix to add to all resources | `string` | `"n8n"` |
+| `desired_count` | Desired count of n8n tasks | `number` | `1` |
+| `container_image` | Container image to use for n8n | `string` | `"n8nio/n8n:latest"` |
+| `fargate_type` | Fargate type (FARGATE or FARGATE_SPOT) | `string` | `"FARGATE_SPOT"` |
+| `ssl_policy` | SSL policy for HTTPS listener | `string` | `"ELBSecurityPolicy-TLS13-1-2-2021-06"` |
+| `url` | URL for n8n (needs trailing slash) | `string` | `null` |
+| `backend_key` | S3 key for state file | `string` | `"n8n/terraform.tfstate"` |
+| `aws_profile` | AWS Profile name (optional) | `string` | `null` |
+| `aws_access_key` | AWS Access Key (if not using profile) | `string` | `null` |
+| `aws_secret_key` | AWS Secret Key (if not using profile) | `string` | `null` |
+| `tags` | Tags to apply to all resources | `map(string)` | `null` |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| `lb_dns_name` | Load balancer DNS name |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
+| aws | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | n/a |
+| vpc | terraform-aws-modules/vpc/aws | n/a |
 
 ## Resources
 
@@ -56,20 +225,6 @@ No requirements.
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
-## Inputs
+## Support
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_certificate_arn"></a> [certificate\_arn](#input\_certificate\_arn) | Certificate ARN for HTTPS support | `string` | `null` | no |
-| <a name="input_container_image"></a> [container\_image](#input\_container\_image) | Container image to use for n8n | `string` | `"n8nio/n8n:1.4.0"` | no |
-| <a name="input_desired_count"></a> [desired\_count](#input\_desired\_count) | Desired count of n8n tasks, be careful with this to make it more than 1 as it can cause issues with webhooks not registering properly | `number` | `1` | no |
-| <a name="input_fargate_type"></a> [fargate\_type](#input\_fargate\_type) | Fargate type to use for n8n (either FARGATE or FARGATE\_SPOT)) | `string` | `"FARGATE_SPOT"` | no |
-| <a name="input_prefix"></a> [prefix](#input\_prefix) | Prefix to add to all resources | `string` | `"n8n"` | no |
-| <a name="input_url"></a> [url](#input\_url) | URL for n8n (default is LB url), needs a trailing slash if you specify it | `string` | `null` | no |
-| <a name="input_ssl_policy"></a> [ssl\_policy](#input\_ssl\_policy) | SSL policy for HTTPS listner. | `string` | `ELBSecurityPolicy-TLS13-1-2-2021-06` | no |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| <a name="output_lb_dns_name"></a> [lb\_dns\_name](#output\_lb\_dns\_name) | Load balancer DNS name |
+For issues, questions, or contributions, please open an issue in the GitHub repository.

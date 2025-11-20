@@ -44,14 +44,26 @@ resource "aws_ecs_task_definition" "taskdef" {
       mountPoints = [
         {
           sourceVolume  = "persistent"
-          containerPath = "/home/node/.n8n"
+          containerPath = "/home/node/.n8n-fresh"
           readOnly      = false
         }
       ]
       environment = [
         {
+          name  = "N8N_USER_FOLDER"
+          value = "/home/node/.n8n-fresh"
+        },
+        {
           name  = "WEBHOOK_URL"
-          value = var.url != null ? var.url : "${var.certificate_arn == null ? "http" : "https"}://${aws_lb.main.dns_name}/"
+          value = "https://n8n-dashboard.musichool.co/"
+        },
+        {
+          name  = "N8N_EDITOR_BASE_URL"
+          value = "https://n8n-dashboard.musichool.co/"
+        },
+        {
+          name  = "N8N_HOST"
+          value = "n8n-dashboard.musichool.co"
         },
         {
           name  = "N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN"
@@ -62,7 +74,7 @@ resource "aws_ecs_task_definition" "taskdef" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = aws_cloudwatch_log_group.logs.name
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.id
           awslogs-stream-prefix = "n8n"
         }
       }

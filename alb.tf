@@ -53,13 +53,25 @@ resource "aws_lb_target_group" "ip" {
 }
 
 resource "aws_lb_listener" "http" {
-  count             = var.certificate_arn == null ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
+  
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.ip.arn
+    type = var.certificate_arn != null ? "redirect" : "forward"
+    
+    # If certificate exists, redirect to HTTPS
+    dynamic "redirect" {
+      for_each = var.certificate_arn != null ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+    
+    # If no certificate, forward to target group
+    target_group_arn = var.certificate_arn == null ? aws_lb_target_group.ip.arn : null
   }
 
   tags = var.tags

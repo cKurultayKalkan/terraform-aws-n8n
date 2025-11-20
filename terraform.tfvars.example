@@ -1,0 +1,24 @@
+# Project Configuration
+project_name    = "my-n8n-project"
+region          = "us-west-1"
+certificate_arn = "arn:aws:acm:us-west-1:123456789012:certificate/xxxxxx"
+domain          = "n8n.example.com"
+
+# Backend Configuration (S3 & DynamoDB)
+# =======================================
+backend_bucket         = "your-terraform-state-bucket"
+backend_key           = "n8n/terraform.tfstate"  # Optional, default: n8n/terraform.tfstate
+backend_dynamodb_table = "terraform-state-lock"
+
+# AWS Authentication Options
+# ===================================
+
+# Option 1: AWS Profile (Recommended)
+# Use an existing AWS CLI configured profile
+# In this case, access key and secret key are not needed
+aws_profile = "my-aws-profile"
+
+# Option 2: Access Key and Secret Key
+# If not using a profile, you must provide these values
+# aws_access_key = "AKIAIOSFODNN7EXAMPLE"
+# aws_secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
