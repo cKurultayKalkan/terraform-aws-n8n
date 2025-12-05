@@ -47,3 +47,14 @@ resource "aws_efs_access_point" "access" {
 
   tags = var.tags
 }
+
+# Output for backup scripts
+output "efs_id" {
+  description = "EFS File System ID"
+  value       = aws_efs_file_system.main.id
+}
+
+output "efs_arn" {
+  description = "EFS File System ARN"
+  value       = aws_efs_file_system.main.arn
+}

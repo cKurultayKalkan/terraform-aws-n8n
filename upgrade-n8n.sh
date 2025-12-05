@@ -120,7 +120,8 @@ get_current_version() {
 
 # Get latest n8n version from Docker Hub
 get_latest_version() {
-    echo -e "${YELLOW}Checking latest n8n version from Docker Hub...${NC}"
+    # Print messages to stderr so they don't interfere with return value
+    echo -e "${YELLOW}Checking latest n8n version from Docker Hub...${NC}" >&2
 
     # Get latest tag from Docker Hub API
     LATEST_VERSION=$(curl -s 'https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags?page_size=100' | \
@@ -128,13 +129,14 @@ get_latest_version() {
         grep -v "latest" | \
         grep -E '"name":"[0-9]+\.[0-9]+\.[0-9]+"' | \
         head -1 | \
-        cut -d'"' -f4)
+        cut -d'"' -f4 | tr -d '\n\r')
 
     if [ ! -z "$LATEST_VERSION" ]; then
-        echo -e "${GREEN}✓ Latest version: ${CYAN}$LATEST_VERSION${NC}"
+        echo -e "${GREEN}✓ Latest version: ${CYAN}$LATEST_VERSION${NC}" >&2
+        # Only return the image name to stdout
         echo "n8nio/n8n:$LATEST_VERSION"
     else
-        echo -e "${YELLOW}⚠ Could not fetch latest version, using 'latest' tag${NC}"
+        echo -e "${YELLOW}⚠ Could not fetch latest version, using 'latest' tag${NC}" >&2
         echo "n8nio/n8n:latest"
     fi
 }
@@ -177,6 +179,9 @@ case $choice in
         ;;
 esac
 
+# Trim whitespace and newlines from TARGET_IMAGE
+TARGET_IMAGE=$(echo "$TARGET_IMAGE" | tr -d '\n\r' | xargs)
+
 echo ""
 echo -e "${YELLOW}Target image: ${CYAN}$TARGET_IMAGE${NC}"
 echo ""
@@ -201,10 +206,19 @@ echo ""
 # Step 1: Update variables.tf or create terraform.tfvars override
 echo -e "${YELLOW}[1/5] Updating container image configuration...${NC}"
 
+# Backup terraform.tfvars
+cp terraform.tfvars terraform.tfvars.bak
+
 # Check if container_image is already in terraform.tfvars
 if grep -q "^container_image" terraform.tfvars 2>/dev/null; then
-    # Update existing value
-    sed -i.bak "s|^container_image.*|container_image = \"$TARGET_IMAGE\"|" terraform.tfvars
+    # Update existing value using awk (more reliable than sed on macOS)
+    awk -v img="$TARGET_IMAGE" '
+        /^container_image/ {
+            print "container_image = \"" img "\""
+            next
+        }
+        {print}
+    ' terraform.tfvars.bak > terraform.tfvars
     echo -e "${GREEN}✓ Updated container_image in terraform.tfvars${NC}"
 else
     # Add new value

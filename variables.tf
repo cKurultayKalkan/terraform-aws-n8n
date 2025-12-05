@@ -96,3 +96,9 @@ variable "backend_dynamodb_table" {
   description = "DynamoDB table name for Terraform state lock"
   default     = null
 }
+
+variable "backup_retention_days" {
+  type        = number
+  description = "Number of days to retain backups (default: 7 days)"
+  default     = 7
+}

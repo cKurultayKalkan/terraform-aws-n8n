@@ -59,6 +59,40 @@ terraform output
 terraform show
 ```
 
+### n8n Version Management
+
+```bash
+# Upgrade n8n to latest version or specific version
+./upgrade-n8n.sh
+
+# The script will:
+# 1. Show current n8n version
+# 2. Fetch latest version from Docker Hub
+# 3. Update terraform.tfvars with new version
+# 4. Apply changes via Terraform
+# 5. Force new ECS deployment
+# 6. Wait for service to stabilize
+```
+
+### Backup Management
+
+```bash
+# Manage EFS backups (list, create, restore)
+./manage-backups.sh
+
+# Options:
+# 1) List recent backups
+# 2) Create manual backup now
+# 3) Show backup vault information
+# 4) Show backup plan configuration
+```
+
+Daily automated backups are configured via AWS Backup:
+- **Schedule**: Daily at 2 AM UTC
+- **Retention**: 7 days (configurable via `backup_retention_days` variable)
+- **Target**: EFS file system containing all n8n data
+- **Location**: Same region as deployment
+
 ### Manual Backend Initialization
 
 If you need to initialize without the init.sh script:
@@ -115,6 +149,11 @@ aws efs describe-file-systems
 - **iam.tf**: IAM roles for ECS tasks
   - Task role: CloudWatch logs permissions
   - Execution role: CloudWatch logs permissions
+- **backup.tf**: AWS Backup configuration for EFS
+  - Backup vault for storing recovery points
+  - Backup plan with daily schedule
+  - IAM role for backup service
+  - Automatic backup selection for EFS
 
 ### Key Architectural Decisions
 
@@ -122,7 +161,7 @@ aws efs describe-file-systems
 
 2. **Public IP on ECS Tasks**: Tasks are assigned public IPs to pull Docker images without requiring a NAT gateway or VPC endpoints (cost optimization)
 
-3. **EFS for State**: All n8n state is stored on EFS at `/home/node/.n8n-fresh`. **You must backup this volume yourself.**
+3. **EFS for State**: All n8n state is stored on EFS at `/home/node/.n8n-fresh`. **Automated daily backups are configured via AWS Backup (see backup.tf).**
 
 4. **Fargate Spot**: Uses FARGATE_SPOT by default for cost savings. Instances may be replaced occasionally.
 
