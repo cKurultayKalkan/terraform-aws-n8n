@@ -68,6 +68,22 @@ resource "aws_ecs_task_definition" "taskdef" {
         {
           name  = "N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN"
           value = "true"
+        },
+        {
+          name  = "N8N_RUNNERS_ENABLED"
+          value = "true"
+        },
+        {
+          name  = "N8N_SKIP_AUTH_ON_OAUTH_CALLBACK"
+          value = "false"
+        },
+        {
+          name  = "N8N_RESTRICT_FILE_ACCESS_TO"
+          value = "/home/node/.n8n-fresh/.n8n-files"
+        },
+        {
+          name  = "N8N_GIT_NODE_DISABLE_BARE_REPOS"
+          value = "true"
         }
       ]
       logConfiguration = {
