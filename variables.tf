@@ -77,60 +77,63 @@ variable "alb_allowed_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
-# Custom Variables (our additions)
-variable "project_name" {
-  type        = string
-  description = "Project name"
-  default     = "n8n"
-}
+# Additional Custom Variables
+# Note: These are extensions to the base module and are not part of upstream
 
 variable "aws_profile" {
   type        = string
-  description = "AWS Profile name to use (Optional)"
+  description = "AWS Profile name to use for authentication (Optional - used in provider configuration)"
   default     = null
 }
 
 variable "aws_access_key" {
-  description = "AWS Access Key (Required if not using AWS Profile)"
+  type        = string
+  description = "AWS Access Key for authentication (Optional - used if aws_profile is not set)"
   default     = null
 }
 
 variable "aws_secret_key" {
-  description = "AWS Secret Key (Required if not using AWS Profile)"
+  type        = string
+  description = "AWS Secret Key for authentication (Optional - used if aws_profile is not set)"
   default     = null
 }
 
 variable "region" {
   type        = string
+  description = "AWS Region to deploy resources (e.g., us-east-1, us-west-1)"
   default     = "us-west-1"
-  description = "AWS Region (e.g., us-west-1)"
 }
 
 variable "domain" {
-  description = "Domain name to use"
+  type        = string
+  description = "Domain name for n8n instance (used in environment variables)"
   default     = null
 }
 
+# Backend Configuration Variables
+# These are used by setup-backend.sh and init.sh scripts for S3 backend setup
+
 variable "backend_bucket" {
   type        = string
-  description = "S3 bucket name for Terraform state"
+  description = "S3 bucket name for Terraform state storage"
   default     = null
 }
 
 variable "backend_key" {
   type        = string
-  description = "Path to the state file in S3 bucket"
+  description = "Path to the state file within S3 bucket"
   default     = "n8n/terraform.tfstate"
 }
 
 variable "backend_dynamodb_table" {
   type        = string
-  description = "DynamoDB table name for Terraform state lock"
+  description = "DynamoDB table name for Terraform state locking"
   default     = null
 }
 
+# Backup Configuration
 variable "backup_retention_days" {
   type        = number
-  description = "Number of days to retain backups (default: 7 days)"
+  description = "Number of days to retain EFS backups"
   default     = 7
 }
